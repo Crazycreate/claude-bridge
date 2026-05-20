@@ -1,0 +1,16 @@
+{
+  "name": "mobileai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile access to a server-side Claude Code session",
+  "workspaces": [
+    "shared",
+    "server",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace server",
+    "dev:web": "npm run dev --workspace frontend",
+    "build:web": "npm run build --workspace frontend"
+  }
+}

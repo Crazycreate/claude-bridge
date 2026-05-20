@@ -1,0 +1,34 @@
+# Run mobileai with one command:
+#
+#   cp .env.example .env       # then edit AUTH_TOKEN at minimum
+#   docker compose up -d
+#
+# Open http://<host>:8787 — log in with the AUTH_TOKEN you just set.
+#
+# State (chat history + session metadata) persists in the ./data volume.
+# To let Claude work on a directory on your host, mount it into /work and set
+# PROJECT_DIR=/work in .env.
+
+services:
+  bridge:
+    build: .
+    # Alternative: pin a published image once it's on a registry, e.g.
+    # image: ghcr.io/YOUR_GITHUB_USERNAME/mobileai:latest
+    container_name: mobileai
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8787}:8787"
+    env_file:
+      - .env
+    volumes:
+      # Persistent session storage (~/.claude-bridge inside the container)
+      - ./data:/data
+      # Mount the host directory you want Claude to work on. Adjust to taste.
+      - ${PROJECT_DIR_HOST:-./workspace}:/work
+    # Healthcheck so `docker compose ps` shows true status
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s

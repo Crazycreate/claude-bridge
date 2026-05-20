@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+#
+# Project-local manager for the mobileai bridge process.
+# Locates the project root via its own path, so it works whether you call it
+# as ./scripts/bridge from the repo or symlink it into your $PATH.
+#
+# Usage:
+#   ./scripts/bridge start | stop | restart | status | logs | token | url
+#
+# State (pid + log file) lives under $BRIDGE_STATE_DIR, default ~/.local/state/mobileai.
+
+set -u
+
+PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")/.." && pwd)"
+SERVER_DIR="$PROJECT_ROOT/server"
+STATE_DIR="${BRIDGE_STATE_DIR:-$HOME/.local/state/mobileai}"
+PIDFILE="$STATE_DIR/bridge.pid"
+LOGFILE="$STATE_DIR/bridge.log"
+
+# Pull PORT from server/.env (default 8787) so `bridge status` reflects reality.
+PORT=8787
+if [ -f "$SERVER_DIR/.env" ]; then
+  env_port=$(awk -F= '/^PORT=/ {print $2; exit}' "$SERVER_DIR/.env" | tr -d '[:space:]')
+  [ -n "$env_port" ] && PORT="$env_port"
+fi
+
+mkdir -p "$STATE_DIR"
+
+# ── helpers ────────────────────────────────────────────────────────────────
+c_dim()   { printf '\033[2m%s\033[0m' "$*"; }
+c_bold()  { printf '\033[1m%s\033[0m' "$*"; }
+c_green() { printf '\033[32m%s\033[0m' "$*"; }
+c_red()   { printf '\033[31m%s\033[0m' "$*"; }
+
+is_running() { [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+
+port_owner() {
+  # Whoever is bound to $PORT, if anyone (we adopt it on `bridge stop`).
+  if command -v ss >/dev/null 2>&1; then
+    ss -tlnp 2>/dev/null | awk -v p=":$PORT" '$4 ~ p {print $0; exit}'
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:"$PORT" -sTCP:LISTEN -P 2>/dev/null | tail -n+2
+  fi
+}
+
+# ── commands ───────────────────────────────────────────────────────────────
+cmd_start() {
+  if is_running; then
+    echo "$(c_dim 'bridge already running') (pid $(cat "$PIDFILE"))"
+    return 0
+  fi
+  if [ ! -d "$SERVER_DIR/node_modules" ]; then
+    echo "$(c_red '✗') Dependencies missing — run ./setup.sh first."
+    return 1
+  fi
+  if [ ! -f "$SERVER_DIR/.env" ]; then
+    echo "$(c_red '✗') server/.env missing — run ./setup.sh first."
+    return 1
+  fi
+  cd "$SERVER_DIR"
+  nohup npm start > "$LOGFILE" 2>&1 &
+  echo $! > "$PIDFILE"
+  sleep 2
+  if is_running; then
+    echo "$(c_green '✓') bridge started (pid $(cat "$PIDFILE"), port $PORT)"
+    echo "  $(c_dim "log: $LOGFILE")"
+  else
+    echo "$(c_red '✗') bridge failed to start — last log lines:"
+    tail -15 "$LOGFILE" 2>/dev/null
+    rm -f "$PIDFILE"
+    return 1
+  fi
+}
+
+cmd_stop() {
+  if is_running; then
+    pid=$(cat "$PIDFILE")
+    # `npm start` spawns tsx as a child — kill the whole group.
+    pkill -P "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+    rm -f "$PIDFILE"
+  fi
+  # Whether we managed it or not, make sure the port is actually free before
+  # returning. Otherwise a follow-up `start` hits EADDRINUSE and leaves the
+  # old process serving stale config.
+  for _ in $(seq 1 20); do
+    [ -z "$(port_owner)" ] && break
+    sleep 0.25
+  done
+  if [ -n "$(port_owner)" ]; then
+    fuser -k "${PORT}/tcp" >/dev/null 2>&1 || true
+    sleep 0.5
+  fi
+  if [ -z "$(port_owner)" ]; then
+    echo "$(c_green '✓') bridge stopped"
+  else
+    echo "$(c_red '✗') couldn't free port $PORT — something else is holding it"
+    return 1
+  fi
+}
+
+cmd_restart() {
+  cmd_stop || return 1
+  cmd_start
+}
+
+cmd_status() {
+  printf "%-12s " "$(c_bold 'bridge')"
+  if is_running; then
+    printf "%s (pid %s, port %s)\n" "$(c_green 'running')" "$(cat "$PIDFILE")" "$PORT"
+    printf "%-12s %s\n" "$(c_dim 'open')" "http://localhost:$PORT"
+  else
+    if [ -n "$(port_owner)" ]; then
+      printf "%s (port %s busy — not managed by this script)\n" "$(c_red 'not running')" "$PORT"
+    else
+      printf "%s\n" "$(c_red 'not running')"
+    fi
+  fi
+  printf "%-12s %s\n" "$(c_dim 'log')" "$LOGFILE"
+}
+
+cmd_logs() {
+  if [ ! -f "$LOGFILE" ]; then
+    echo "$(c_dim 'no log yet — start the bridge first.')"
+    return 1
+  fi
+  tail -F "$LOGFILE"
+}
+
+cmd_token() {
+  if [ -f "$SERVER_DIR/.env" ]; then
+    awk -F= '/^AUTH_TOKEN=/ {print $2}' "$SERVER_DIR/.env"
+  else
+    echo "$(c_red '✗') server/.env not found"
+    return 1
+  fi
+}
+
+cmd_url() {
+  # Best-effort: try to figure out a sensible URL for this machine.
+  local host
+  if [ -n "${BRIDGE_URL:-}" ]; then
+    echo "$BRIDGE_URL"; return
+  fi
+  host=$(hostname -I 2>/dev/null | awk '{print $1}')
+  [ -z "$host" ] && host=$(hostname 2>/dev/null)
+  [ -z "$host" ] && host="localhost"
+  echo "http://$host:$PORT"
+}
+
+# ── dispatch ───────────────────────────────────────────────────────────────
+case "${1:-status}" in
+  start)   cmd_start ;;
+  stop)    cmd_stop ;;
+  restart) cmd_restart ;;
+  status)  cmd_status ;;
+  logs)    cmd_logs ;;
+  token)   cmd_token ;;
+  url)     cmd_url ;;
+  *)
+    cat <<USAGE
+usage: bridge <command>
+
+  start      Start the bridge in the background
+  stop       Stop it
+  restart    Stop then start (use after editing server-side code)
+  status     Show running state, port, log path
+  logs       Tail the bridge log (Ctrl+C to exit)
+  token      Print the AUTH_TOKEN from server/.env
+  url        Print the URL to open in a browser
+USAGE
+    exit 1
+    ;;
+esac

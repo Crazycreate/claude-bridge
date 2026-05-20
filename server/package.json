@@ -1,0 +1,29 @@
+{
+  "name": "mobileai-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bridge server: exposes a persistent Claude Code session over WebSocket for mobile access",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@mobileai/shared": "*",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "web-push": "^3.6.7",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.14.0",
+    "@types/web-push": "^3.6.4",
+    "@types/ws": "^8.5.12",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.0"
+  }
+}

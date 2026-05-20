@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+*/node_modules/
+
+# build output
+frontend/dist/
+server/dist/
+*.tsbuildinfo
+
+# environment & secrets (never commit AUTH_TOKEN, ANTHROPIC_API_KEY, etc)
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code per-user settings (not shared)
+.claude/settings.local.json
+
+# uploads (created at runtime in each session's cwd, but in case any local dev leftover)
+.bridge-uploads/
+
+# Tailscale leftovers (in case they ever end up in repo dir)
+*.tsstate
+tailscale*.tgz

@@ -1,0 +1,31 @@
+# Build artifacts and deps are reproduced inside the image
+node_modules
+*/node_modules
+frontend/dist
+server/dist
+*.tsbuildinfo
+
+# Local state and secrets
+.env
+.env.*
+!.env.example
+.claude
+.git
+.gitignore
+.bridge-uploads
+
+# OS / editor
+.DS_Store
+.vscode
+.idea
+*.swp
+
+# Logs and docs that don't belong in the image
+*.log
+*.md
+docs
+
+# Random files dev might leave around
+Dockerfile
+docker-compose.yml
+.dockerignore
