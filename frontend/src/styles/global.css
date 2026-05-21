@@ -302,6 +302,31 @@ button {
   outline: none;
 }
 
+/* model picker — lives in the sidebar so the phone topbar stays slim */
+.sidebar-model {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border);
+}
+.sidebar-model-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.sidebar-model-wrap {
+  flex: 1;
+  display: block;
+}
+.sidebar-model-wrap .model-select {
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 24px 6px 10px;
+}
+
 .sidebar-footer {
   padding: 10px;
   padding-bottom: max(10px, env(safe-area-inset-bottom));
@@ -619,6 +644,9 @@ button {
 }
 .topbar-open {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: var(--surface);
   color: var(--text-muted);
   border: 1px solid var(--border);
@@ -636,13 +664,32 @@ button {
 .topbar-open:active {
   transform: scale(0.95);
 }
+/* On narrow phones the button collapses to its icon to free up title space. */
+@media (max-width: 430px) {
+  .topbar-open-label {
+    display: none;
+  }
+  .topbar-open {
+    padding: 6px 8px;
+  }
+}
 
 /* ---- chat area ---------------------------------------------------------- */
 
+.chat-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
 .chat-area {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  scroll-behavior: smooth;
+  /* No `scroll-behavior: smooth` here — auto-scroll must land exactly at the
+     bottom in one frame, or onScroll mid-animation false-flags "not at bottom".
+     The manual "back to bottom" button opts into smooth scrolling itself. */
 }
 .chat-area::-webkit-scrollbar {
   width: 4px;
@@ -650,6 +697,67 @@ button {
 .chat-area::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 2px;
+}
+
+/* floating "back to bottom" button --------------------------------------- */
+
+.scroll-bottom {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  z-index: 10;
+  animation: fadeUp 0.18s ease;
+  transition: border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.scroll-bottom:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.scroll-bottom:active {
+  transform: scale(0.9);
+}
+
+/* session-switch loading state ------------------------------------------- */
+
+.chat-loading {
+  height: 56dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.chat-loading-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .chat-inner {
   max-width: 820px;

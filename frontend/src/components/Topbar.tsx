@@ -1,18 +1,15 @@
 import type { ClaudeState } from '@mobileai/shared';
 import type { GitStatus } from '../hooks/useGitStatus';
-import { MODELS, modelLabel } from '../lib/models';
 import { IconFolder, IconFolderOpen, IconMenu } from './icons';
 
 interface Props {
   title: string;
   cwd?: string;
   status: ClaudeState | null;
-  model: string;
   git: GitStatus | null;
   onMenu: () => void;
   onOpen: () => void;
   onInterrupt: () => void;
-  onModelChange: (model: string) => void;
 }
 
 const STATE_LABEL: Record<NonNullable<Props['status']>, string> = {
@@ -33,18 +30,11 @@ function shortCwd(cwd: string): string {
   return `…/${parts.slice(-2).join('/')}`;
 }
 
-/** Header of the main column: drawer toggle, title, cwd, git, model, run state. */
-export function Topbar({
-  title,
-  cwd,
-  status,
-  model,
-  git,
-  onMenu,
-  onOpen,
-  onInterrupt,
-  onModelChange,
-}: Props) {
+/**
+ * Header of the main column: drawer toggle, title, cwd, git, run state.
+ * The model picker lives in the sidebar to keep this bar uncluttered on phones.
+ */
+export function Topbar({ title, cwd, status, git, onMenu, onOpen, onInterrupt }: Props) {
   return (
     <div className="topbar">
       <button className="hamburger" onClick={onMenu} aria-label="打开侧边栏">
@@ -79,9 +69,9 @@ export function Topbar({
           title="打开历史对话"
           aria-label="打开历史对话"
         >
-          <IconFolderOpen size={14} /> 打开
+          <IconFolderOpen size={14} />
+          <span className="topbar-open-label">打开</span>
         </button>
-        <ModelSelect value={model} onChange={onModelChange} />
         {status === 'busy' ? (
           <button className="topbar-stop" onClick={onInterrupt}>
             停止
@@ -100,22 +90,4 @@ function gitTooltip(g: GitStatus): string {
   if (g.ahead) parts.push(`${g.ahead} ahead`);
   if (g.behind) parts.push(`${g.behind} behind`);
   return parts.length ? ` · ${parts.join(' · ')}` : '';
-}
-
-function ModelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="model-select-wrap" title={`当前模型:${modelLabel(value)}`}>
-      <select
-        className="model-select"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {MODELS.map((m) => (
-          <option key={m.id || 'default'} value={m.id}>
-            {m.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
 }

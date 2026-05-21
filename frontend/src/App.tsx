@@ -58,6 +58,7 @@ export default function App() {
         activeId={bridge.activeId}
         conn={bridge.conn}
         open={drawerOpen}
+        model={active?.model}
         onClose={closeDrawer}
         onNew={() => {
           closeDrawer();
@@ -69,6 +70,7 @@ export default function App() {
         }}
         onDelete={bridge.deleteSession}
         onRename={bridge.renameSession}
+        onModelChange={bridge.setModel}
       />
 
       <div className="main">
@@ -76,14 +78,17 @@ export default function App() {
           title={active?.title ?? 'Claude Bridge'}
           cwd={active?.cwd}
           status={bridge.claudeStatus}
-          model={active?.model ?? ''}
           git={git}
           onMenu={() => setDrawerOpen(true)}
           onOpen={() => setOpenDialogOpen(true)}
           onInterrupt={bridge.interrupt}
-          onModelChange={bridge.setModel}
         />
-        <ChatArea items={bridge.items} status={bridge.claudeStatus} onDecide={bridge.sendPermission} />
+        <ChatArea
+          items={bridge.items}
+          status={bridge.claudeStatus}
+          switching={bridge.switching}
+          onDecide={bridge.sendPermission}
+        />
         <StatsBar stats={bridge.stats} />
         <QuickActions disabled={bridge.conn !== 'online'} onSend={bridge.sendPrompt} />
         <Composer

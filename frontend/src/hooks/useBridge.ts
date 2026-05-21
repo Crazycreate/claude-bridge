@@ -27,6 +27,8 @@ export interface Bridge {
   claudeStatus: ClaudeState | null;
   defaultCwd: string;
   items: TimelineItem[];
+  /** True while a session switch is in flight — select sent, history not loaded yet. */
+  switching: boolean;
   stats: Stats;
   sendPrompt: (text: string) => void;
   sendPermission: (id: string, decision: PermissionDecision) => void;
@@ -50,6 +52,7 @@ export function useBridge(token: string | null): Bridge {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [defaultCwd, setDefaultCwd] = useState('');
   const [items, setItems] = useState<TimelineItem[]>([]);
+  const [switching, setSwitching] = useState(false);
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -99,6 +102,9 @@ export function useBridge(token: string | null): Bridge {
               setItems([]);
               setStats(EMPTY_STATS);
             }
+            // The server has acknowledged the switch; history follows in the
+            // same burst, so it is safe to drop the loading spinner now.
+            setSwitching(false);
             return;
           case 'status':
             return; // session state is derived from the `sessions` list
@@ -171,6 +177,7 @@ export function useBridge(token: string | null): Bridge {
     claudeStatus,
     defaultCwd,
     items,
+    switching,
     stats,
     sendPrompt: useCallback(
       (text: string) => {
@@ -194,7 +201,17 @@ export function useBridge(token: string | null): Bridge {
       [send],
     ),
     setModel: useCallback((model: string) => send({ type: 'set_model', model }), [send]),
-    selectSession: useCallback((id: string) => send({ type: 'select_session', id }), [send]),
+    selectSession: useCallback(
+      (id: string) => {
+        if (id !== activeIdRef.current) {
+          setSwitching(true);
+          // Safety net: never strand the spinner if the server stays silent.
+          window.setTimeout(() => setSwitching(false), 5000);
+        }
+        send({ type: 'select_session', id });
+      },
+      [send],
+    ),
     deleteSession: useCallback((id: string) => send({ type: 'delete_session', id }), [send]),
     renameSession: useCallback(
       (id: string, title: string) => send({ type: 'rename_session', id, title }),

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { SessionMeta } from '@mobileai/shared';
 import type { ConnState } from '../hooks/useBridge';
+import { MODELS } from '../lib/models';
 import { PushToggle } from './PushToggle';
 
 interface Props {
@@ -8,11 +9,14 @@ interface Props {
   activeId: string | null;
   conn: ConnState;
   open: boolean;
+  /** Active session's model id; `undefined` when no session is selected. */
+  model?: string;
   onClose: () => void;
   onNew: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onModelChange: (model: string) => void;
 }
 
 const CONN_LABEL: Record<ConnState, string> = {
@@ -27,11 +31,13 @@ export function Sidebar({
   activeId,
   conn,
   open,
+  model,
   onClose,
   onNew,
   onSelect,
   onDelete,
   onRename,
+  onModelChange,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -169,6 +175,28 @@ export function Sidebar({
           <div className="session-empty">没有匹配的会话</div>
         )}
       </div>
+
+      {model !== undefined && (
+        <div className="sidebar-model">
+          <label className="sidebar-model-label" htmlFor="sidebar-model-select">
+            模型
+          </label>
+          <div className="model-select-wrap sidebar-model-wrap">
+            <select
+              id="sidebar-model-select"
+              className="model-select"
+              value={model}
+              onChange={(e) => onModelChange(e.target.value)}
+            >
+              {MODELS.map((m) => (
+                <option key={m.id || 'default'} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       <div className="sidebar-footer">
         <div className="conn-badge">
