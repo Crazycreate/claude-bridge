@@ -3,6 +3,34 @@ import type { HistoryEntry, ServerMessage, SessionMeta } from '@mobileai/shared'
 import { ClaudeSession } from './session.js';
 import { SessionStore } from './store.js';
 import { push, type PushPayload } from './push.js';
+import { classifyUserText } from './cli-history.js';
+
+/**
+ * Re-run the system-injection filter over a persisted history. Sessions
+ * imported before that filter existed have raw `<local-command-caveat>` etc.
+ * baked into their `user_echo` messages — this scrubs them on load.
+ */
+function cleanupHistory(history: HistoryEntry[]): HistoryEntry[] {
+  const out: HistoryEntry[] = [];
+  for (const entry of history) {
+    if (entry.msg.type === 'user_echo') {
+      const c = classifyUserText(entry.msg.text);
+      if (c.kind === 'skip') continue;
+      out.push({ at: entry.at, msg: { type: 'user_echo', text: c.text } });
+    } else {
+      out.push(entry);
+    }
+  }
+  return out;
+}
+
+/** First real user message in a history — used to re-title scrubbed sessions. */
+function firstUserEcho(history: HistoryEntry[]): string | null {
+  for (const entry of history) {
+    if (entry.msg.type === 'user_echo' && entry.msg.text.trim()) return entry.msg.text;
+  }
+  return null;
+}
 
 /**
  * Translate a session message into a push notification when it deserves
@@ -86,6 +114,13 @@ export class SessionManager {
     // Hydrate dormant sessions from disk so the sidebar shows history at boot.
     const persisted = this.store.loadAll().sort((a, b) => b.createdAt - a.createdAt);
     for (const p of persisted) {
+      const history = cleanupHistory(p.history);
+      // Re-title sessions whose stored title is a leftover system injection.
+      let title = p.title;
+      if (!title || title.startsWith('<') || title === 'New chat' || title === '终端会话') {
+        const ft = firstUserEcho(history);
+        if (ft) title = ft.slice(0, 80);
+      }
       const session = new ClaudeSession({
         id: p.id,
         cwd: p.cwd,
@@ -94,10 +129,10 @@ export class SessionManager {
         onHistory: () => this.scheduleSave(p.id),
         onEmit: (m) => this.pushIfRelevant(p.id, m),
         initial: {
-          title: p.title,
+          title,
           createdAt: p.createdAt,
           claudeSessionId: p.claudeSessionId,
-          history: p.history,
+          history,
           model: p.model,
         },
       });

@@ -99,10 +99,12 @@ export function listCliSessions(cwd: string): CliSessionMeta[] {
 }
 
 function summarize(path: string, sessionId: string): CliSessionMeta {
-  // Three title candidates, in descending preference:
-  //   clean — real user input (not a Claude Code system wrapper)
-  //   cmd   — a slash-command turn, shown as "命令 /foo"
-  //   any   — anything else, tags stripped
+  // Title candidates, in descending preference:
+  //   aiTitle — Claude Code's own AI-generated session title (best)
+  //   clean   — real user input (not a Claude Code system wrapper)
+  //   cmd     — a slash-command turn, shown as "命令 /foo"
+  //   any     — anything else, tags stripped
+  let aiTitle = '';
   let clean = '';
   let cmd = '';
   let any = '';
@@ -114,6 +116,11 @@ function summarize(path: string, sessionId: string): CliSessionMeta {
     try {
       event = JSON.parse(line);
     } catch {
+      continue;
+    }
+    // Claude Code records an AI-generated title; the last one is freshest.
+    if (event.type === 'ai-title' && typeof event.aiTitle === 'string') {
+      aiTitle = event.aiTitle.trim();
       continue;
     }
     if (event.type === 'user' || event.type === 'assistant') {
@@ -131,8 +138,8 @@ function summarize(path: string, sessionId: string): CliSessionMeta {
       }
     }
   }
-  const chosen = clean || cmd || any || '(无标题)';
-  return { sessionId, title: chosen.slice(0, 60), lastActiveAt: 0, messages };
+  const chosen = aiTitle || clean || cmd || any || '(无标题)';
+  return { sessionId, title: chosen.slice(0, 80), lastActiveAt: 0, messages };
 }
 
 /**
@@ -161,7 +168,8 @@ export function loadCliHistory(cwd: string, sessionId: string): HistoryEntry[] {
     if (event.type === 'user') {
       const content = event.message?.content;
       if (typeof content === 'string') {
-        out.push({ at, msg: { type: 'user_echo', text: content } });
+        const c = classifyUserText(content);
+        if (c.kind === 'keep') out.push({ at, msg: { type: 'user_echo', text: c.text } });
       } else if (Array.isArray(content)) {
         for (const block of content) {
           if (block?.type === 'tool_result') {
@@ -175,7 +183,8 @@ export function loadCliHistory(cwd: string, sessionId: string): HistoryEntry[] {
               },
             });
           } else if (block?.type === 'text' && typeof block.text === 'string') {
-            out.push({ at, msg: { type: 'user_echo', text: block.text } });
+            const c = classifyUserText(block.text);
+            if (c.kind === 'keep') out.push({ at, msg: { type: 'user_echo', text: c.text } });
           }
         }
       }
@@ -198,6 +207,26 @@ export function loadCliHistory(cwd: string, sessionId: string): HistoryEntry[] {
     }
   }
   return out;
+}
+
+/**
+ * Decide how to render a CLI user turn. Claude Code injects XML-wrapped
+ * system text (command caveats, slash-command stubs, command output) into the
+ * transcript as "user" messages — those should not show up as chat bubbles.
+ */
+export function classifyUserText(raw: string): { kind: 'skip' } | { kind: 'keep'; text: string } {
+  const t = raw.trim();
+  // A slash-command invocation — collapse to a compact one-liner.
+  const cmd = t.match(/<command-name>([^<]+)<\/command-name>/);
+  if (cmd) return { kind: 'keep', text: `运行命令 ${cmd[1].trim()}` };
+  // Anything that *starts* with one of Claude Code's lowercase system-injection
+  // wrappers (command stubs, IDE context, caveats, reminders) is not something
+  // the user typed — drop it. Real user text never opens with these tags.
+  const lead = t.match(/^<([a-z][a-z0-9_-]*)[\s>]/);
+  if (lead && /command|ide[_-]|caveat|stdout|reminder/.test(lead[1])) {
+    return { kind: 'skip' };
+  }
+  return { kind: 'keep', text: raw };
 }
 
 /** Strip XML-ish wrappers Claude Code injects, leaving whatever plain text remains. */
