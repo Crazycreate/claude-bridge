@@ -7,6 +7,7 @@ import {
   subscribeBrowser,
   unsubscribeBrowser,
 } from '../lib/push';
+import { IconBell, IconBellOff } from './icons';
 
 type State = 'unsupported' | 'denied' | 'off' | 'on';
 
@@ -54,14 +55,15 @@ export function PushToggle() {
 
   if (state === 'unsupported') return null;
 
+  const icon = state === 'on' ? <IconBell size={13} /> : <IconBellOff size={13} />;
   const label =
     state === 'on'
-      ? '🔔 推送已开启'
+      ? '推送已开启'
       : state === 'denied'
-        ? '🚫 通知已被系统禁用'
+        ? '通知已被系统禁用'
         : working
-          ? '⋯ 设置中'
-          : '🔕 开启推送通知';
+          ? '设置中…'
+          : '开启推送通知';
 
   return (
     <>
@@ -71,7 +73,7 @@ export function PushToggle() {
         onClick={toggle}
         disabled={working || state === 'denied'}
       >
-        {label}
+        {icon} {label}
       </button>
       {error && <div className="push-error">{error}</div>}
     </>

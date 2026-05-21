@@ -1,6 +1,7 @@
 import type { ClaudeState } from '@mobileai/shared';
 import type { GitStatus } from '../hooks/useGitStatus';
 import { MODELS, modelLabel } from '../lib/models';
+import { IconFolder, IconFolderOpen, IconMenu } from './icons';
 
 interface Props {
   title: string;
@@ -47,14 +48,14 @@ export function Topbar({
   return (
     <div className="topbar">
       <button className="hamburger" onClick={onMenu} aria-label="打开侧边栏">
-        ☰
+        <IconMenu size={18} />
       </button>
       <div className="topbar-info">
         <div className="topbar-title">{title}</div>
         <div className="topbar-meta">
           {cwd && (
             <span className="topbar-cwd" title={cwd}>
-              📁 {shortCwd(cwd)}
+              <IconFolder size={12} /> {shortCwd(cwd)}
             </span>
           )}
           {git?.isRepo && (
@@ -78,7 +79,7 @@ export function Topbar({
           title="打开历史对话"
           aria-label="打开历史对话"
         >
-          📂 打开
+          <IconFolderOpen size={14} /> 打开
         </button>
         <ModelSelect value={model} onChange={onModelChange} />
         {status === 'busy' ? (

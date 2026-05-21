@@ -2,6 +2,7 @@ import type { PermissionDecision } from '@mobileai/shared';
 import type { TimelineItem } from '../lib/timeline';
 import { renderMarkdown } from '../lib/markdown';
 import { MarkdownBody } from './CodeBlocks';
+import { IconLock, IconTool } from './icons';
 
 /** Pretty-print arbitrary tool input/output for the monospace panes. */
 function fmt(value: unknown): string {
@@ -42,7 +43,7 @@ function ToolItem({ name, input, result }: Extract<TimelineItem, { kind: 'tool' 
   return (
     <details className="tool-card">
       <summary>
-        <span>🔧</span>
+        <IconTool size={14} />
         <span className="tool-name">{name}</span>
         <span className={`tool-badge ${badge.cls}`}>{badge.label}</span>
       </summary>
@@ -68,7 +69,7 @@ function PermissionItem({
   return (
     <div className="perm">
       <div className="perm-head">
-        🔐 <span>Allow</span> <b>{item.toolName}</b>?
+        <IconLock size={14} /> <span>Allow</span> <b>{item.toolName}</b>?
       </div>
       <pre className="code">{fmt(item.input)}</pre>
       {item.decision ? (

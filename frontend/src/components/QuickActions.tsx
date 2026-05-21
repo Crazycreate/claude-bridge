@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { IconGear } from './icons';
 
 interface Props {
   disabled: boolean;
@@ -84,7 +85,7 @@ export function QuickActions({ disabled, onSend }: Props) {
           onClick={() => setEditing((v) => !v)}
           aria-label={editing ? '完成编辑' : '编辑快捷指令'}
         >
-          {editing ? '完成' : '⚙'}
+          {editing ? '完成' : <IconGear size={13} />}
         </button>
       </div>
       {editing && (

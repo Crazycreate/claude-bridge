@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listCliSessions, listDirs, type CliSessionMeta, type DirListing } from '../lib/dirs';
 import { MODELS } from '../lib/models';
+import { IconFolder, IconTerminal } from './icons';
 
 interface Props {
   defaultCwd: string;
@@ -101,7 +102,9 @@ export function NewSessionDialog({ defaultCwd, onCreate, onClose }: Props) {
               >
                 ↑
               </button>
-              <h4 className="picker-col-title">📁 子目录</h4>
+              <h4 className="picker-col-title">
+                <IconFolder size={13} /> 子目录
+              </h4>
               {loading && <span className="dir-loading">…</span>}
             </header>
             <div className="picker-col-path" title={listing?.path}>
@@ -120,7 +123,9 @@ export function NewSessionDialog({ defaultCwd, onCreate, onClose }: Props) {
                     className="dir-entry"
                     onClick={() => goTo(joinPath(listing.path, name))}
                   >
-                    <span className="dir-icon">📁</span>
+                    <span className="dir-icon">
+                      <IconFolder size={14} />
+                    </span>
                     <span className="dir-name">{name}</span>
                   </button>
                 ))}
@@ -130,7 +135,10 @@ export function NewSessionDialog({ defaultCwd, onCreate, onClose }: Props) {
           <section className="picker-col">
             <header className="picker-col-head">
               <h4 className="picker-col-title">
-                📥 终端会话 {cliSessions.length > 0 && <span className="picker-count">{cliSessions.length}</span>}
+                <IconTerminal size={13} /> 终端会话{' '}
+                {cliSessions.length > 0 && (
+                  <span className="picker-count">{cliSessions.length}</span>
+                )}
               </h4>
             </header>
             <div className="picker-col-path">点击继续之前的对话</div>

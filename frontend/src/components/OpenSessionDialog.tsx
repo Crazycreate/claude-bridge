@@ -8,6 +8,7 @@ import {
   type CliSessionMeta,
   type DirListing,
 } from '../lib/dirs';
+import { IconChat, IconFolder } from './icons';
 
 interface Props {
   defaultCwd: string;
@@ -147,7 +148,9 @@ export function OpenSessionDialog({
               >
                 ↑
               </button>
-              <h4 className="picker-col-title">📁 子目录</h4>
+              <h4 className="picker-col-title">
+                <IconFolder size={13} /> 子目录
+              </h4>
               {loading && <span className="dir-loading">…</span>}
             </header>
             <div className="picker-col-path" title={listing?.path}>
@@ -166,7 +169,9 @@ export function OpenSessionDialog({
                     className="dir-entry"
                     onClick={() => goTo(joinPath(listing.path, name))}
                   >
-                    <span className="dir-icon">📁</span>
+                    <span className="dir-icon">
+                      <IconFolder size={14} />
+                    </span>
                     <span className="dir-name">{name}</span>
                   </button>
                 ))}
@@ -175,7 +180,9 @@ export function OpenSessionDialog({
 
           <section className="picker-col">
             <header className="picker-col-head">
-              <h4 className="picker-col-title">💬 该目录的对话</h4>
+              <h4 className="picker-col-title">
+                <IconChat size={13} /> 该目录的对话
+              </h4>
             </header>
             <div className="picker-col-path">本应用会话 + 终端会话</div>
             <div className="dir-list">

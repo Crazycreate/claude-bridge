@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { formatSize, isImage, uploadFiles, type UploadedFile } from '../lib/uploads';
+import { IconFile } from './icons';
 
 interface Props {
   onSend: (text: string) => void;
@@ -151,7 +152,9 @@ export function Composer({ onSend, disabled, sessionId }: Props) {
               {isImage(a.mime) && a.previewUrl ? (
                 <img src={a.previewUrl} alt={a.name} />
               ) : (
-                <span className="attachment-icon">📄</span>
+                <span className="attachment-icon">
+                  <IconFile size={16} />
+                </span>
               )}
               <div className="attachment-meta">
                 <div className="attachment-name" title={a.path}>
