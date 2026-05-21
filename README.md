@@ -32,10 +32,10 @@ session behind a polished chat UI you can reach from any device.
 
 ## Features
 
-- 📱 **Phone-first chat UI** — multi-session sidebar, attachments, code highlighting, model switching
+- 📱 **Phone-first chat UI** — multi-session sidebar, session search, quick-action chips, attachments, code highlighting
 - 🪞 **Persistent server-side sessions** — survive client disconnects and bridge restarts (`resume` keeps Claude's context intact)
 - 📂 **In-browser working-directory picker** — no SSH needed to remember what's on the server
-- 🔁 **Import existing terminal sessions** — picks up your `~/.claude/projects/*` history so you can continue them from your phone, _any_ cwd
+- 🗂 **Browse, reopen, delete past conversations** — an "Open" dialog lists every session under any directory: this app's own _and_ Claude CLI terminal sessions from `~/.claude/projects`; reopen, hide, or delete each
 - 🔐 **Permission approvals as cards** — Claude asks before running anything sensitive
 - 📎 **Drag/paste/upload files** — images, PDFs, logs; Claude reads them via its `Read` tool
 - 💰 **Live cost tracking** — per-turn duration and accumulated USD spend
@@ -256,7 +256,7 @@ MIT — see [LICENSE](LICENSE).
 >
 > 这个项目存在的意义在于官方功能解决不了的几个场景。下面"vs Claude 官方 Remote Control"详细对比。
 
-**核心能力**:多会话侧边栏、工作目录选择器、Claude CLI 终端历史导入(**手机直接浏览**任意 cwd 下的所有历史会话)、工具调用卡片、权限批准、文件/图片上传、Markdown + 代码高亮、git 状态、模型切换(Haiku/Sonnet/Opus)、会话搜索、快捷指令、Web Push 推送通知、PWA 加主屏。
+**核心能力**:多会话侧边栏、工作目录选择器、**「打开历史对话」**(按目录浏览本应用会话 + Claude CLI 终端历史,一键打开 / 隐藏 / 删除,跨任意 cwd)、工具调用卡片、权限批准、文件/图片上传、Markdown + 代码高亮、git 状态、模型切换(Haiku/Sonnet/Opus)、会话搜索、快捷指令、Web Push 推送通知、PWA 加主屏。
 
 ### vs Claude 官方 Remote Control
 
