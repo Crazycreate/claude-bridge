@@ -6,8 +6,9 @@ import type { HistoryEntry, ServerMessage } from '@mobileai/shared';
 /**
  * The Claude Code CLI persists each chat as a JSONL file under
  * `~/.claude/projects/<encoded-cwd>/<sessionId>.jsonl`. The cwd is encoded by
- * replacing every `/` with `-`, so e.g. `/home/alice/work/myproj` becomes
- * `-home-alice-work-myproj`.
+ * replacing every non-alphanumeric character with `-`, so both
+ * `/home/alice/all_papers` and `/home/alice/all.papers` map to
+ * `-home-alice-all-papers`.
  */
 const ROOT = join(homedir(), '.claude', 'projects');
 
@@ -62,7 +63,8 @@ export interface CliSessionMeta {
 
 /** Map an absolute cwd to the encoded directory name Claude CLI uses. */
 function encodeCwd(cwd: string): string {
-  return cwd.replace(/\//g, '-');
+  // Claude CLI replaces every non-alphanumeric char (/, _, ., space …) with '-'.
+  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
 }
 
 /** List terminal-Claude sessions that were recorded inside `cwd`. */
@@ -97,7 +99,13 @@ export function listCliSessions(cwd: string): CliSessionMeta[] {
 }
 
 function summarize(path: string, sessionId: string): CliSessionMeta {
-  let title = '(no title)';
+  // Three title candidates, in descending preference:
+  //   clean — real user input (not a Claude Code system wrapper)
+  //   cmd   — a slash-command turn, shown as "命令 /foo"
+  //   any   — anything else, tags stripped
+  let clean = '';
+  let cmd = '';
+  let any = '';
   let messages = 0;
   const text = readFileSync(path, 'utf8');
   for (const line of text.split('\n')) {
@@ -110,13 +118,21 @@ function summarize(path: string, sessionId: string): CliSessionMeta {
     }
     if (event.type === 'user' || event.type === 'assistant') {
       messages += 1;
-      if (title === '(no title)' && event.type === 'user') {
-        const t = firstText(event.message?.content);
-        if (t) title = t.replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (event.type === 'user' && !clean) {
+        const raw = firstText(event.message?.content);
+        const t = raw ? raw.replace(/\s+/g, ' ').trim() : '';
+        if (t && !t.startsWith('<')) {
+          clean = t;
+        } else if (t) {
+          const m = t.match(/<command-name>([^<]+)<\/command-name>/);
+          if (m && !cmd) cmd = `命令 ${m[1].trim()}`;
+          if (!any) any = stripTags(t);
+        }
       }
     }
   }
-  return { sessionId, title, lastActiveAt: 0, messages };
+  const chosen = clean || cmd || any || '(无标题)';
+  return { sessionId, title: chosen.slice(0, 60), lastActiveAt: 0, messages };
 }
 
 /**
@@ -182,6 +198,15 @@ export function loadCliHistory(cwd: string, sessionId: string): HistoryEntry[] {
     }
   }
   return out;
+}
+
+/** Strip XML-ish wrappers Claude Code injects, leaving whatever plain text remains. */
+function stripTags(text: string): string {
+  const s = text
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return s || text;
 }
 
 function firstText(content: unknown): string | null {
