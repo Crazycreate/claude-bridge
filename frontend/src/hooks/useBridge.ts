@@ -7,6 +7,7 @@ import type {
   SessionMeta,
 } from '@mobileai/shared';
 import { applyServerMessage, type TimelineItem } from '../lib/timeline';
+import { wsUrl } from '../lib/server';
 
 export type ConnState = 'connecting' | 'online' | 'offline';
 
@@ -68,8 +69,7 @@ export function useBridge(token: string | null): Bridge {
     const connect = (): void => {
       if (disposed) return;
       setConn('connecting');
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      const ws = new WebSocket(`${proto}://${location.host}/ws`);
+      const ws = new WebSocket(wsUrl());
       wsRef.current = ws;
 
       ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token } satisfies ClientMessage));

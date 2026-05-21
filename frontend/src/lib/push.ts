@@ -1,4 +1,5 @@
 import { loadToken } from './storage';
+import { apiUrl } from './server';
 
 /**
  * Web Push client helpers. Workflow:
@@ -20,7 +21,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 async function authedFetch(path: string, init?: RequestInit): Promise<Response> {
   const token = loadToken();
   if (!token) throw new Error('未登录');
-  return fetch(path, {
+  return fetch(apiUrl(path), {
     ...init,
     headers: {
       ...(init?.headers ?? {}),

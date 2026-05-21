@@ -25,6 +25,21 @@ const distDir = join(here, '..', '..', 'frontend', 'dist');
 const app = express();
 app.use(express.json({ limit: '256kb' }));
 
+// CORS: the packaged Android app runs from a different origin than the bridge,
+// so its API calls are cross-origin. `*` is safe here — auth is carried by the
+// `x-auth-token` header, never cookies, so there is no credentialed-request
+// concern. The web build is same-origin and unaffected.
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'x-auth-token, x-session-id, content-type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 // Serve the React production build when present; fall back to the legacy
 // in-server test page so `npm start` still works before a build has been done.
 const webRoot = existsSync(join(distDir, 'index.html')) ? distDir : publicDir;

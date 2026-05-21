@@ -1,4 +1,5 @@
 import { loadToken } from './storage';
+import { apiUrl } from './server';
 
 export interface DirListing {
   path: string;
@@ -10,7 +11,7 @@ export interface DirListing {
 export async function listDirs(path: string): Promise<DirListing> {
   const token = loadToken();
   if (!token) throw new Error('未登录');
-  const res = await fetch(`/api/dirs?path=${encodeURIComponent(path)}`, {
+  const res = await fetch(apiUrl(`/api/dirs?path=${encodeURIComponent(path)}`), {
     headers: { 'x-auth-token': token },
   });
   const body = await res.json();
@@ -29,7 +30,7 @@ export interface CliSessionMeta {
 export async function listCliSessions(cwd: string): Promise<CliSessionMeta[]> {
   const token = loadToken();
   if (!token) throw new Error('未登录');
-  const res = await fetch(`/api/cli-sessions?cwd=${encodeURIComponent(cwd)}`, {
+  const res = await fetch(apiUrl(`/api/cli-sessions?cwd=${encodeURIComponent(cwd)}`), {
     headers: { 'x-auth-token': token },
   });
   const body = await res.json();
@@ -40,7 +41,7 @@ export async function listCliSessions(cwd: string): Promise<CliSessionMeta[]> {
 async function postJson(path: string, payload: object): Promise<void> {
   const token = loadToken();
   if (!token) throw new Error('未登录');
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method: 'POST',
     headers: { 'x-auth-token': token, 'content-type': 'application/json' },
     body: JSON.stringify(payload),

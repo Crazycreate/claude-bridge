@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Claude Bridge</string>
+    <string name="title_activity_main">Claude Bridge</string>
+    <string name="package_name">dev.claudebridge.app</string>
+    <string name="custom_url_scheme">dev.claudebridge.app</string>
+</resources>

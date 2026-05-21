@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadToken } from '../lib/storage';
+import { apiUrl } from '../lib/server';
 
 export interface GitStatus {
   isRepo: boolean;
@@ -25,7 +26,7 @@ export function useGitStatus(cwd: string | null, refreshKey: number): GitStatus 
     const token = loadToken();
     if (!token) return;
     let cancelled = false;
-    fetch(`/api/git?cwd=${encodeURIComponent(cwd)}`, { headers: { 'x-auth-token': token } })
+    fetch(apiUrl(`/api/git?cwd=${encodeURIComponent(cwd)}`), { headers: { 'x-auth-token': token } })
       .then((r) => r.json())
       .then((body) => {
         if (cancelled) return;

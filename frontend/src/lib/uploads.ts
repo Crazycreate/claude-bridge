@@ -1,4 +1,5 @@
 import { loadToken } from './storage';
+import { apiUrl } from './server';
 
 export interface UploadedFile {
   path: string;
@@ -15,7 +16,7 @@ export async function uploadFiles(sessionId: string, files: File[]): Promise<Upl
   const form = new FormData();
   for (const f of files) form.append('files', f);
 
-  const res = await fetch('/api/upload', {
+  const res = await fetch(apiUrl('/api/upload'), {
     method: 'POST',
     headers: { 'x-auth-token': token, 'x-session-id': sessionId },
     body: form,

@@ -216,14 +216,45 @@ docker compose logs -f      # tail logs
 docker compose restart      # after image rebuild
 ```
 
+## Android app (APK)
+
+The web app is a PWA — "Add to Home Screen" already gives an app-like
+experience. For a real installable APK, the project ships a Capacitor Android
+wrapper.
+
+**Build it** (no local Android SDK needed — GitHub does the build):
+
+1. Repo **Actions** tab → **Build Android APK** → **Run workflow** (or push a
+   `v*` tag).
+2. When the run finishes, download `claude-bridge-debug-apk` from its artifacts.
+3. Copy the `.apk` to your phone and install it (allow "install from unknown
+   sources").
+
+**First launch** asks for the **server address** and **AUTH_TOKEN** — enter the
+bridge URL your phone can reach (e.g. `http://192.168.1.5:8787` on a LAN, or a
+tunnel URL). Both are stored only on the device.
+
+> The app allows cleartext HTTP so it can reach a plain-HTTP bridge. For
+> exposure beyond a trusted LAN, put the bridge behind HTTPS or a tunnel and
+> enter the `https://` URL instead.
+
+Building locally instead needs JDK 17 + Android SDK:
+
+```bash
+npm run build:web
+cd frontend && npx cap sync android && cd android
+./gradlew assembleDebug   # → app/build/outputs/apk/debug/app-debug.apk
+```
+
 ## Repo layout
 
 ```
 mobileai/
 ├── shared/      # Wire protocol types shared by server and frontend
 ├── server/      # Express + WebSocket + Claude Agent SDK
-├── frontend/    # React + Vite PWA
+├── frontend/    # React + Vite PWA  (+ android/ — Capacitor APK wrapper)
 ├── scripts/     # bridge — start/stop/status helper
+├── .github/     # CI — Build Android APK workflow
 ├── setup.sh     # one-shot installer
 ├── Dockerfile
 ├── docker-compose.yml
@@ -311,3 +342,15 @@ docker compose up -d | down | restart | logs -f
 ### 配置项
 
 详见 [`.env.example`](.env.example)。最少要设 `AUTH_TOKEN`(必填)和 Claude 认证(`ANTHROPIC_API_KEY` 或 mount `~/.claude`)。
+
+### 安卓 App(APK)
+
+网页版本身是 PWA,「添加到主屏幕」即可当 App 用。要装真正的 APK:
+
+1. 仓库 **Actions** 页 → **Build Android APK** → **Run workflow**(或推一个 `v*` tag)。
+2. 跑完后从该次运行的 artifacts 下载 `claude-bridge-debug-apk`。
+3. 把 `.apk` 传到手机安装(需允许「未知来源」)。
+
+首次启动会让你填**服务器地址**和 **AUTH_TOKEN** —— 填手机能访问到的 bridge 地址
+(局域网如 `http://192.168.1.5:8787`,或隧道地址),两者只存在本机。超出可信局域网
+范围时,建议给 bridge 套 HTTPS 或隧道,再填 `https://` 地址。
