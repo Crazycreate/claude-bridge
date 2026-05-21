@@ -1,7 +1,8 @@
 /**
  * Inline SVG icons — replacements for emoji, which render as tofu boxes in
- * environments without an emoji font. All icons are 24×24 line glyphs that
- * inherit `currentColor`, so they pick up the surrounding text colour.
+ * environments without an emoji font. Most icons are 24×24 line glyphs that
+ * inherit `currentColor`; the folder icons are an intentional exception and
+ * carry their own folder-yellow fill.
  */
 import type { CSSProperties } from 'react';
 
@@ -36,20 +37,52 @@ function Svg({
   );
 }
 
-export function IconFolder(p: IconProps) {
+/**
+ * Folder icons are deliberately *coloured* — a warm folder-yellow reads as
+ * "folder" instantly, the way the old 📁 emoji did, while staying an SVG so it
+ * never degrades to a tofu box. Two-tone: darker back panel, lighter front.
+ */
+const FOLDER_FRONT = '#F2C14E';
+const FOLDER_BACK = '#D99A2B';
+
+export function IconFolder({ size = 16, className }: IconProps) {
   return (
-    <Svg {...p}>
-      <path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    </Svg>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      style={baseStyle}
+      aria-hidden="true"
+    >
+      {/* back panel + tab */}
+      <path d="M2 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v3H2z" fill={FOLDER_BACK} />
+      {/* front panel */}
+      <path d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" fill={FOLDER_FRONT} />
+    </svg>
   );
 }
 
-export function IconFolderOpen(p: IconProps) {
+export function IconFolderOpen({ size = 16, className }: IconProps) {
   return (
-    <Svg {...p}>
-      <path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2" />
-      <path d="M3 8v9a2 2 0 0 0 2 2h13.5a2 2 0 0 0 1.9-1.4l1.6-5A1 1 0 0 0 21 11H7a2 2 0 0 0-1.9 1.4z" />
-    </Svg>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      style={baseStyle}
+      aria-hidden="true"
+    >
+      {/* back panel + tab */}
+      <path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2H3z" fill={FOLDER_BACK} />
+      {/* angled-open front flap */}
+      <path
+        d="M3 10v7a2 2 0 0 0 2 2h13.5a2 2 0 0 0 1.9-1.4l1.6-5A1 1 0 0 0 21 13H7a2 2 0 0 0-1.9 1.4z"
+        fill={FOLDER_FRONT}
+      />
+    </svg>
   );
 }
 
