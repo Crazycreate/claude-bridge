@@ -617,6 +617,25 @@ button {
 .topbar-stop:active {
   transform: scale(0.95);
 }
+.topbar-open {
+  flex-shrink: 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 7px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, transform 0.1s;
+}
+.topbar-open:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.topbar-open:active {
+  transform: scale(0.95);
+}
 
 /* ---- chat area ---------------------------------------------------------- */
 
@@ -1668,6 +1687,18 @@ button {
 }
 
 /* cli-sessions ------------------------------------------------------- */
+
+.open-group {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 9px 10px 3px;
+}
+.open-group:first-child {
+  padding-top: 3px;
+}
 
 .cli-session {
   display: block;

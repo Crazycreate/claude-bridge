@@ -5,6 +5,7 @@ import { clearToken, loadToken, saveToken } from './lib/storage';
 import { ChatArea } from './components/ChatArea';
 import { Composer } from './components/Composer';
 import { NewSessionDialog } from './components/NewSessionDialog';
+import { OpenSessionDialog } from './components/OpenSessionDialog';
 import { QuickActions } from './components/QuickActions';
 import { Sidebar } from './components/Sidebar';
 import { StatsBar } from './components/StatsBar';
@@ -15,6 +16,7 @@ export default function App() {
   const [token, setToken] = useState<string | null>(() => loadToken());
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [openDialogOpen, setOpenDialogOpen] = useState(false);
   const bridge = useBridge(token);
 
   // All hooks must run before the early return — React's Rules of Hooks
@@ -77,6 +79,7 @@ export default function App() {
           model={active?.model ?? ''}
           git={git}
           onMenu={() => setDrawerOpen(true)}
+          onOpen={() => setOpenDialogOpen(true)}
           onInterrupt={bridge.interrupt}
           onModelChange={bridge.setModel}
         />
@@ -97,6 +100,22 @@ export default function App() {
           onCreate={(cwd, resumeId) => {
             bridge.newSession(cwd, resumeId);
             setDialogOpen(false);
+          }}
+        />
+      )}
+
+      {openDialogOpen && (
+        <OpenSessionDialog
+          defaultCwd={active?.cwd ?? bridge.defaultCwd}
+          bridgeSessions={bridge.sessions}
+          onClose={() => setOpenDialogOpen(false)}
+          onOpenBridge={(id) => {
+            bridge.selectSession(id);
+            setOpenDialogOpen(false);
+          }}
+          onOpenCli={(cwd, sessionId) => {
+            bridge.newSession(cwd, sessionId);
+            setOpenDialogOpen(false);
           }}
         />
       )}

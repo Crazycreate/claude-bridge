@@ -9,6 +9,7 @@ interface Props {
   model: string;
   git: GitStatus | null;
   onMenu: () => void;
+  onOpen: () => void;
   onInterrupt: () => void;
   onModelChange: (model: string) => void;
 }
@@ -39,6 +40,7 @@ export function Topbar({
   model,
   git,
   onMenu,
+  onOpen,
   onInterrupt,
   onModelChange,
 }: Props) {
@@ -70,6 +72,14 @@ export function Topbar({
       </div>
 
       <div className="topbar-right">
+        <button
+          className="topbar-open"
+          onClick={onOpen}
+          title="打开历史对话"
+          aria-label="打开历史对话"
+        >
+          📂 打开
+        </button>
         <ModelSelect value={model} onChange={onModelChange} />
         {status === 'busy' ? (
           <button className="topbar-stop" onClick={onInterrupt}>
