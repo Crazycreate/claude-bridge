@@ -1700,6 +1700,43 @@ button {
   padding-top: 3px;
 }
 
+/* a history row: clickable session body + delete/hide actions */
+.hist-item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+.hist-item .cli-session {
+  flex: 1;
+  min-width: 0;
+}
+.hist-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.hist-act {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+.hist-act:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+.hist-act.danger:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: none;
+}
+
 .cli-session {
   display: block;
   width: 100%;

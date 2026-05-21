@@ -9,7 +9,12 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import type { ClientMessage, ServerMessage } from '@mobileai/shared';
 import { config } from './config.js';
 import { SessionManager } from './manager.js';
-import { listCliSessions, loadCliHistory } from './cli-history.js';
+import {
+  deleteCliSession,
+  hideCliSession,
+  listCliSessions,
+  loadCliHistory,
+} from './cli-history.js';
 import { gitStatus } from './git-status.js';
 import { push } from './push.js';
 
@@ -55,6 +60,45 @@ app.get('/api/cli-sessions', (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(400).json({ error: message });
+  }
+});
+
+/** Hide a terminal session from the picker (transcript stays on disk). */
+app.post('/api/cli-sessions/hide', (req, res) => {
+  if (req.header('x-auth-token') !== config.authToken) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const sessionId = (req.body as { sessionId?: string })?.sessionId;
+  if (!sessionId) {
+    res.status(400).json({ error: 'sessionId is required' });
+    return;
+  }
+  try {
+    hideCliSession(sessionId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+/** Permanently delete a terminal session's transcript. Irreversible. */
+app.post('/api/cli-sessions/delete', (req, res) => {
+  if (req.header('x-auth-token') !== config.authToken) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const body = req.body as { cwd?: string; sessionId?: string };
+  if (!body?.cwd || !body?.sessionId) {
+    res.status(400).json({ error: 'cwd and sessionId are required' });
+    return;
+  }
+  try {
+    const abs = resolveWorkingDir(body.cwd);
+    deleteCliSession(abs, body.sessionId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 

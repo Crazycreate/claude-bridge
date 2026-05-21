@@ -117,6 +117,7 @@ export default function App() {
             bridge.newSession(cwd, sessionId);
             setOpenDialogOpen(false);
           }}
+          onDeleteBridge={bridge.deleteSession}
         />
       )}
     </div>

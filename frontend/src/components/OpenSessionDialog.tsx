@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { ClaudeState, SessionMeta } from '@mobileai/shared';
-import { listCliSessions, listDirs, type CliSessionMeta, type DirListing } from '../lib/dirs';
+import {
+  deleteCliSession,
+  hideCliSession,
+  listCliSessions,
+  listDirs,
+  type CliSessionMeta,
+  type DirListing,
+} from '../lib/dirs';
 
 interface Props {
   defaultCwd: string;
@@ -11,6 +18,8 @@ interface Props {
   onOpenBridge: (id: string) => void;
   /** Resume a terminal Claude session as a new app session. */
   onOpenCli: (cwd: string, sessionId: string) => void;
+  /** Delete an app session (removes it from this app and from disk). */
+  onDeleteBridge: (id: string) => void;
 }
 
 const STATE_LABEL: Record<ClaudeState, string> = {
@@ -25,6 +34,8 @@ const STATE_LABEL: Record<ClaudeState, string> = {
  * Modal for re-opening a past conversation. The user browses to a directory
  * and sees every prior conversation rooted there — both this app's own
  * sessions and Claude CLI (terminal) sessions — then clicks one to open it.
+ * Each row can also be removed: app sessions are deleted; terminal sessions
+ * can be hidden (kept on disk) or permanently deleted.
  */
 export function OpenSessionDialog({
   defaultCwd,
@@ -32,11 +43,13 @@ export function OpenSessionDialog({
   onClose,
   onOpenBridge,
   onOpenCli,
+  onDeleteBridge,
 }: Props) {
   const [cwd, setCwd] = useState(defaultCwd);
   const [listing, setListing] = useState<DirListing | null>(null);
   const [cliSessions, setCliSessions] = useState<CliSessionMeta[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Debounced load: refresh the browser whenever the path input settles.
@@ -69,11 +82,45 @@ export function OpenSessionDialog({
   const matchingBridge = bridgeSessions.filter((s) => s.cwd === resolvedPath);
   const empty = !loading && matchingBridge.length === 0 && cliSessions.length === 0;
 
+  const hideCli = async (s: CliSessionMeta): Promise<void> => {
+    setActionError(null);
+    try {
+      await hideCliSession(s.sessionId);
+      setCliSessions((prev) => prev.filter((x) => x.sessionId !== s.sessionId));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const deleteCli = async (s: CliSessionMeta): Promise<void> => {
+    if (
+      !confirm(
+        `彻底删除终端会话「${s.title}」?\n\n` +
+          `这会从 ~/.claude/projects 删除原始记录,不可恢复 —— ` +
+          `你在终端 claude --resume 也将再也找不到它。`,
+      )
+    ) {
+      return;
+    }
+    setActionError(null);
+    try {
+      await deleteCliSession(resolvedPath, s.sessionId);
+      setCliSessions((prev) => prev.filter((x) => x.sessionId !== s.sessionId));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const deleteBridge = (s: SessionMeta): void => {
+    if (!confirm(`删除会话「${s.title}」?\n\n这会删除本应用里的这条会话记录。`)) return;
+    onDeleteBridge(s.id);
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card modal-wide" onClick={(e) => e.stopPropagation()}>
         <h3>打开历史对话</h3>
-        <p>选择一个目录,查看该目录下之前的对话 —— 既包括本应用的会话,也包括终端里跑过的 Claude 会话。点击任意一条直接打开。</p>
+        <p>选择一个目录,查看该目录下之前的对话 —— 既包括本应用的会话,也包括终端里跑过的 Claude 会话。点标题打开,点右侧按钮删除。</p>
 
         <label className="modal-label">目录</label>
         <input
@@ -85,6 +132,8 @@ export function OpenSessionDialog({
           placeholder={defaultCwd}
           onChange={(e) => setCwd(e.target.value)}
         />
+
+        {actionError && <div className="dir-error" style={{ marginTop: 8 }}>{actionError}</div>}
 
         <div className="picker-grid">
           <section className="picker-col">
@@ -134,32 +183,57 @@ export function OpenSessionDialog({
 
               {matchingBridge.length > 0 && <div className="open-group">本应用会话</div>}
               {matchingBridge.map((s) => (
-                <button
-                  type="button"
-                  key={s.id}
-                  className="cli-session"
-                  onClick={() => onOpenBridge(s.id)}
-                >
-                  <div className="cli-session-title">{s.title}</div>
-                  <div className="cli-session-meta">
-                    {STATE_LABEL[s.state]} · {formatTime(s.createdAt)}
+                <div className="hist-item" key={s.id}>
+                  <button className="cli-session" onClick={() => onOpenBridge(s.id)}>
+                    <div className="cli-session-title">{s.title}</div>
+                    <div className="cli-session-meta">
+                      {STATE_LABEL[s.state]} · {formatTime(s.createdAt)}
+                    </div>
+                  </button>
+                  <div className="hist-actions">
+                    <button
+                      type="button"
+                      className="hist-act danger"
+                      title="删除此会话"
+                      onClick={() => deleteBridge(s)}
+                    >
+                      ✕
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
 
               {cliSessions.length > 0 && <div className="open-group">终端会话</div>}
               {cliSessions.slice(0, 40).map((s) => (
-                <button
-                  type="button"
-                  key={s.sessionId}
-                  className="cli-session"
-                  onClick={() => onOpenCli(resolvedPath, s.sessionId)}
-                >
-                  <div className="cli-session-title">{s.title}</div>
-                  <div className="cli-session-meta">
-                    {s.messages} 条 · {formatTime(s.lastActiveAt)}
+                <div className="hist-item" key={s.sessionId}>
+                  <button
+                    className="cli-session"
+                    onClick={() => onOpenCli(resolvedPath, s.sessionId)}
+                  >
+                    <div className="cli-session-title">{s.title}</div>
+                    <div className="cli-session-meta">
+                      {s.messages} 条 · {formatTime(s.lastActiveAt)}
+                    </div>
+                  </button>
+                  <div className="hist-actions">
+                    <button
+                      type="button"
+                      className="hist-act"
+                      title="从列表隐藏(不删原始记录)"
+                      onClick={() => void hideCli(s)}
+                    >
+                      隐藏
+                    </button>
+                    <button
+                      type="button"
+                      className="hist-act danger"
+                      title="彻底删除终端记录(不可恢复)"
+                      onClick={() => void deleteCli(s)}
+                    >
+                      ✕
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
               {cliSessions.length > 40 && (
                 <div className="cli-sessions-more">还有 {cliSessions.length - 40} 条更早的…</div>

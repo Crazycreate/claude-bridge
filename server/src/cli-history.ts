@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { HistoryEntry, ServerMessage } from '@mobileai/shared';
@@ -10,6 +10,47 @@ import type { HistoryEntry, ServerMessage } from '@mobileai/shared';
  * `-home-alice-work-myproj`.
  */
 const ROOT = join(homedir(), '.claude', 'projects');
+
+/** Where we record terminal sessions the user chose to hide (not delete). */
+const HIDDEN_FILE = join(homedir(), '.claude-bridge', 'hidden-cli.json');
+
+/**
+ * Session ids are UUIDs. Validate before touching the filesystem so a crafted
+ * id can never escape the projects directory (path traversal).
+ */
+function isValidSessionId(id: string): boolean {
+  return /^[0-9a-fA-F][0-9a-fA-F-]{7,63}$/.test(id) && !id.includes('..');
+}
+
+function loadHidden(): Set<string> {
+  try {
+    return new Set(JSON.parse(readFileSync(HIDDEN_FILE, 'utf8')) as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveHidden(ids: Set<string>): void {
+  mkdirSync(join(homedir(), '.claude-bridge'), { recursive: true });
+  writeFileSync(HIDDEN_FILE, JSON.stringify([...ids]));
+}
+
+/** Hide a terminal session from the picker without touching its transcript. */
+export function hideCliSession(sessionId: string): void {
+  if (!isValidSessionId(sessionId)) throw new Error('invalid session id');
+  const hidden = loadHidden();
+  hidden.add(sessionId);
+  saveHidden(hidden);
+}
+
+/**
+ * Permanently delete a terminal session's transcript from ~/.claude/projects.
+ * This is irreversible — the conversation is gone from `claude --resume` too.
+ */
+export function deleteCliSession(cwd: string, sessionId: string): void {
+  if (!isValidSessionId(sessionId)) throw new Error('invalid session id');
+  unlinkSync(join(ROOT, encodeCwd(cwd), `${sessionId}.jsonl`));
+}
 
 export interface CliSessionMeta {
   sessionId: string;
@@ -33,11 +74,14 @@ export function listCliSessions(cwd: string): CliSessionMeta[] {
   } catch {
     return [];
   }
+  const hidden = loadHidden();
   const out: CliSessionMeta[] = [];
   for (const file of entries) {
     const id = file.replace(/\.jsonl$/, '');
     // Skip subagent transcripts — they belong to a parent session.
     if (id.startsWith('agent-')) continue;
+    // Skip sessions the user explicitly hid.
+    if (hidden.has(id)) continue;
     try {
       const path = join(dir, file);
       const stat = statSync(path);

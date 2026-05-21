@@ -36,3 +36,25 @@ export async function listCliSessions(cwd: string): Promise<CliSessionMeta[]> {
   if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
   return body.sessions as CliSessionMeta[];
 }
+
+async function postJson(path: string, payload: object): Promise<void> {
+  const token = loadToken();
+  if (!token) throw new Error('未登录');
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'x-auth-token': token, 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
+}
+
+/** Hide a terminal session from the picker — its transcript stays on disk. */
+export function hideCliSession(sessionId: string): Promise<void> {
+  return postJson('/api/cli-sessions/hide', { sessionId });
+}
+
+/** Permanently delete a terminal session's transcript. Irreversible. */
+export function deleteCliSession(cwd: string, sessionId: string): Promise<void> {
+  return postJson('/api/cli-sessions/delete', { cwd, sessionId });
+}
