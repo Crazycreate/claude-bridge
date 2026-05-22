@@ -42,6 +42,7 @@ session behind a polished chat UI you can reach from any device.
 - 🌿 **Per-session git status** — branch + dirty count right in the topbar
 - 🚦 **Mid-conversation model switching** — Haiku for cheap queries, Opus for heavy lifts
 - 🔔 **Web Push notifications** — Claude finishes a long turn or needs permission → your phone buzzes
+- 📲 **Installable Android app** — a Capacitor APK built in CI, no local Android SDK needed; or just use the PWA's "Add to Home Screen"
 
 ## vs official Remote Control
 
@@ -226,9 +227,10 @@ wrapper.
 
 1. Repo **Actions** tab → **Build Android APK** → **Run workflow** (or push a
    `v*` tag).
-2. When the run finishes, download `claude-bridge-debug-apk` from its artifacts.
-3. Copy the `.apk` to your phone and install it (allow "install from unknown
-   sources").
+2. When the run goes green, open it and download the **claude-bridge-debug-apk**
+   artifact at the bottom of the page — it arrives as a `.zip`.
+3. Unzip it, copy `app-debug.apk` to your phone, and install it (allow "install
+   from unknown sources").
 
 **First launch** asks for the **server address** and **AUTH_TOKEN** — enter the
 bridge URL your phone can reach (e.g. `http://192.168.1.5:8787` on a LAN, or a
@@ -265,6 +267,7 @@ mobileai/
 
 - Server: Node 18+, Express, `ws`, `@anthropic-ai/claude-agent-sdk`, multer
 - Frontend: React 18, Vite, vite-plugin-pwa, marked + highlight.js + DOMPurify
+- Android: Capacitor 6 wrapper, debug APK built via GitHub Actions
 - Build: TypeScript everywhere, npm workspaces
 
 ## Acknowledgements
