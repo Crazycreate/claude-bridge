@@ -4,6 +4,12 @@
 long-running [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)
 session behind a polished chat UI you can reach from any device.
 
+<p align="center">
+  <a href="https://github.com/Crazycreate/claude-bridge/releases/latest/download/app-debug.apk">
+    <img src="https://img.shields.io/github/v/release/Crazycreate/claude-bridge?label=Download%20Android%20APK&logo=android&color=3DDC84&style=for-the-badge" alt="Download Android APK" />
+  </a>
+</p>
+
 > 🇨🇳 [中文 README](#zh) at the bottom.
 
 <p align="center">
@@ -223,14 +229,10 @@ The web app is a PWA — "Add to Home Screen" already gives an app-like
 experience. For a real installable APK, the project ships a Capacitor Android
 wrapper.
 
-**Build it** (no local Android SDK needed — GitHub does the build):
-
-1. Repo **Actions** tab → **Build Android APK** → **Run workflow** (or push a
-   `v*` tag).
-2. When the run goes green, open it and download the **claude-bridge-debug-apk**
-   artifact at the bottom of the page — it arrives as a `.zip`.
-3. Unzip it, copy `app-debug.apk` to your phone, and install it (allow "install
-   from unknown sources").
+**Just want the app?** Grab the latest prebuilt APK from
+[**Releases**](https://github.com/Crazycreate/claude-bridge/releases/latest) —
+direct link: **[app-debug.apk](https://github.com/Crazycreate/claude-bridge/releases/latest/download/app-debug.apk)**.
+Copy it to your phone and install it (allow "install from unknown sources").
 
 **First launch** asks for the **server address** and **AUTH_TOKEN** — enter the
 bridge URL your phone can reach (e.g. `http://192.168.1.5:8787` on a LAN, or a
@@ -240,7 +242,12 @@ tunnel URL). Both are stored only on the device.
 > exposure beyond a trusted LAN, put the bridge behind HTTPS or a tunnel and
 > enter the `https://` URL instead.
 
-Building locally instead needs JDK 17 + Android SDK:
+**Build it yourself** — no local Android SDK needed, GitHub does the build:
+the **Actions** tab → **Build Android APK** → **Run workflow** (or push a `v*`
+tag). When the run goes green, download the **claude-bridge-debug-apk** artifact
+(a `.zip`) and unzip `app-debug.apk` from it.
+
+Or fully local, which needs JDK 17 + Android SDK:
 
 ```bash
 npm run build:web
@@ -350,10 +357,13 @@ docker compose up -d | down | restart | logs -f
 
 网页版本身是 PWA,「添加到主屏幕」即可当 App 用。要装真正的 APK:
 
-1. 仓库 **Actions** 页 → **Build Android APK** → **Run workflow**(或推一个 `v*` tag)。
-2. 跑完后从该次运行的 artifacts 下载 `claude-bridge-debug-apk`。
-3. 把 `.apk` 传到手机安装(需允许「未知来源」)。
+**直接下载** —— 从 [**Releases**](https://github.com/Crazycreate/claude-bridge/releases/latest)
+拿最新预编译包,直链:**[app-debug.apk](https://github.com/Crazycreate/claude-bridge/releases/latest/download/app-debug.apk)**,
+传到手机安装(需允许「未知来源」)。
 
 首次启动会让你填**服务器地址**和 **AUTH_TOKEN** —— 填手机能访问到的 bridge 地址
 (局域网如 `http://192.168.1.5:8787`,或隧道地址),两者只存在本机。超出可信局域网
 范围时,建议给 bridge 套 HTTPS 或隧道,再填 `https://` 地址。
+
+**自己构建** —— 仓库 **Actions** 页 → **Build Android APK** → **Run workflow**
+(或推 `v*` tag),跑完从 artifacts 下载 `claude-bridge-debug-apk`(zip,解压出 `.apk`)。
